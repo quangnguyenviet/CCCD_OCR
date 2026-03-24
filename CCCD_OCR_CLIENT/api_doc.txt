@@ -1,0 +1,181 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/v1/extract/image": {
+      "post": {
+        "tags": [
+          "extract-controller"
+        ],
+        "operationId": "extractFromImage",
+        "parameters": [
+          {
+            "name": "card_model_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "roi_model_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ocr_model_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image_file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "image_file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractImageResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/models/active": {
+      "get": {
+        "tags": [
+          "model-controller"
+        ],
+        "operationId": "getActiveModels",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveModelsResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ExtractImageResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ExtractedCccdDataDto"
+          },
+          "processing_time_ms": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ExtractedCccdDataDto": {
+        "type": "object",
+        "properties": {
+          "gender": {
+            "type": "string"
+          },
+          "nationality": {
+            "type": "string"
+          },
+          "cccd_number": {
+            "type": "string"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "date_of_birth": {
+            "type": "string"
+          },
+          "place_of_origin": {
+            "type": "string"
+          },
+          "place_of_residence": {
+            "type": "string"
+          }
+        }
+      },
+      "ActiveModelsResponseDto": {
+        "type": "object",
+        "properties": {
+          "card_detection_models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelItemDto"
+            }
+          },
+          "roi_detection_models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelItemDto"
+            }
+          },
+          "ocr_models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelItemDto"
+            }
+          }
+        }
+      },
+      "ModelItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
