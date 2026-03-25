@@ -1,0 +1,122 @@
+@startuml OCR_Feature_Design
+!theme plain
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+title CCCD OCR Client - OCR Feature Design
+
+package "Routing Layer" {
+  [App Routes]\n(src/app/App.jsx) as AppRoutes
+  [OCR Page]\n(src/pages/OcrPage.jsx) as OcrPage
+}
+
+package "Feature: OCR" {
+  [OcrWorkspace]\n(src/features/ocr/components/OcrWorkspace.jsx) as Workspace
+  [useOcrExtraction]\n(src/features/ocr/hooks/useOcrExtraction.js) as Hook
+  [ocrApi]\n(src/features/ocr/services/ocrApi.js) as Api
+}
+
+package "External" {
+  [Backend API]\n(http://localhost:8080) as Backend
+}
+
+AppRoutes --> OcrPage : route "/ocr"
+OcrPage --> Workspace : render
+Workspace --> Hook : use hook state/actions
+Hook --> Api : call getActiveModels()\ncall extractFromImage()
+Api --> Backend : GET /api/models/active
+Api --> Backend : POST /api/v1/extract/image
+Backend --> Api : ActiveModelsResponseDto / ExtractImageResponseDto
+Api --> Hook : parsed response / error
+Hook --> Workspace : status + result + errorMessage
+Workspace --> Workspace : render empty/loading/success/error state
+
+note right of Hook
+State model:
+- models, modelsLoading, modelsError
+- selectedModels
+- imageFile, imagePreview
+- status: idle | loading | success | error
+- result, errorMessage
+end note
+
+@enduml
+
+@startuml OCR_Extraction_Sequence
+!theme plain
+skinparam shadowing false
+
+title OCR Extraction Flow (Runtime Sequence)
+
+actor User
+participant "OcrWorkspace" as W
+participant "useOcrExtraction" as H
+participant "ocrApi (axios)" as A
+participant "Backend API" as B
+
+== Load active models ==
+User -> W : Open /ocr
+W -> H : init hook
+H -> A : getActiveModels()
+A -> B : GET /api/models/active
+B --> A : ActiveModelsResponseDto
+A --> H : response.data
+H --> W : models + modelsLoading=false
+
+== Start extraction ==
+User -> W : Select 3 models + upload image
+W -> H : updateModelSelection() / selectImage()
+W -> H : startExtraction()
+H -> A : extractFromImage(card_model_id, roi_model_id, ocr_model_id, image_file)
+A -> B : POST /api/v1/extract/image
+B --> A : ExtractImageResponseDto
+A --> H : response.data
+H --> W : status=success + result
+W --> User : Show read-only fields + copy/download actions
+
+alt API error
+A --> H : throw Error(message)
+H --> W : status=error + errorMessage
+W --> User : Show error state
+end
+
+@enduml
+
+@startuml OCR_Data_Contracts
+!theme plain
+skinparam shadowing false
+
+title OCR Data Contracts (Client View)
+
+class ActiveModelsResponseDto {
+  +card_detection_models: ModelItemDto[]
+  +roi_detection_models: ModelItemDto[]
+  +ocr_models: ModelItemDto[]
+}
+
+class ModelItemDto {
+  +id: string
+  +name: string
+}
+
+class ExtractImageResponseDto {
+  +status: string
+  +message: string
+  +data: ExtractedCccdDataDto
+  +processing_time_ms: number
+}
+
+class ExtractedCccdDataDto {
+  +cccd_number: string
+  +full_name: string
+  +date_of_birth: string
+  +gender: string
+  +nationality: string
+  +place_of_origin: string
+  +place_of_residence: string
+}
+
+ActiveModelsResponseDto "1" *-- "*" ModelItemDto
+ExtractImageResponseDto "1" *-- "1" ExtractedCccdDataDto
+
+@enduml

@@ -22,16 +22,16 @@ export async function getActiveModels() {
   }
 }
 
-export async function extractFromImage({ cardModelId, roiModelId, ocrModelId, imageFile }) {
+export async function extractFromImage({ cardModelUrl, roiModelUrl, ocrModelUrl, imageFile }) {
   const formData = new FormData()
   formData.append('image_file', imageFile)
 
   try {
     const response = await apiClient.post('/api/v1/extract/image', formData, {
       params: {
-        card_model_id: cardModelId,
-        roi_model_id: roiModelId,
-        ocr_model_id: ocrModelId,
+        card_model_url: cardModelUrl,
+        roi_model_url: roiModelUrl,
+        ocr_model_url: ocrModelUrl,
       },
     })
 

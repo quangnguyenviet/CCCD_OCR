@@ -19,7 +19,7 @@
         "operationId": "extractFromImage",
         "parameters": [
           {
-            "name": "card_model_id",
+            "name": "card_model_url",
             "in": "query",
             "required": true,
             "schema": {
@@ -27,7 +27,7 @@
             }
           },
           {
-            "name": "roi_model_id",
+            "name": "roi_model_url",
             "in": "query",
             "required": true,
             "schema": {
@@ -35,7 +35,7 @@
             }
           },
           {
-            "name": "ocr_model_id",
+            "name": "ocr_model_url",
             "in": "query",
             "required": true,
             "schema": {

@@ -84,13 +84,13 @@ function OcrWorkspace() {
           <label htmlFor="card-model">Mô hình nhận dạng vùng CCCD</label>
           <select
             id="card-model"
-            value={selectedModels.cardModelId}
-            onChange={(event) => updateModelSelection('cardModelId', event.target.value)}
+            value={selectedModels.cardModelUrl}
+            onChange={(event) => updateModelSelection('cardModelUrl', event.target.value)}
             disabled={modelsLoading}
           >
             <option value="">-- Chọn mô hình --</option>
             {models.card_detection_models?.map((model) => (
-              <option key={model.id} value={model.id}>
+              <option key={model.id} value={model.url ?? ''}>
                 {model.name}
               </option>
             ))}
@@ -101,13 +101,13 @@ function OcrWorkspace() {
           <label htmlFor="roi-model">Mô hình nhận dạng vùng thông tin</label>
           <select
             id="roi-model"
-            value={selectedModels.roiModelId}
-            onChange={(event) => updateModelSelection('roiModelId', event.target.value)}
+            value={selectedModels.roiModelUrl}
+            onChange={(event) => updateModelSelection('roiModelUrl', event.target.value)}
             disabled={modelsLoading}
           >
             <option value="">-- Chọn mô hình --</option>
             {models.roi_detection_models?.map((model) => (
-              <option key={model.id} value={model.id}>
+              <option key={model.id} value={model.url ?? ''}>
                 {model.name}
               </option>
             ))}
@@ -118,13 +118,13 @@ function OcrWorkspace() {
           <label htmlFor="ocr-model">Mô hình OCR</label>
           <select
             id="ocr-model"
-            value={selectedModels.ocrModelId}
-            onChange={(event) => updateModelSelection('ocrModelId', event.target.value)}
+            value={selectedModels.ocrModelUrl}
+            onChange={(event) => updateModelSelection('ocrModelUrl', event.target.value)}
             disabled={modelsLoading}
           >
             <option value="">-- Chọn mô hình --</option>
             {models.ocr_models?.map((model) => (
-              <option key={model.id} value={model.id}>
+              <option key={model.id} value={model.url ?? ''}>
                 {model.name}
               </option>
             ))}

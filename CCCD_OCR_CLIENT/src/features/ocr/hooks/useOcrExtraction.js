@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { extractFromImage, getActiveModels } from '@/features/ocr/services/ocrApi'
 
 const initialSelectedModels = {
-  cardModelId: '',
-  roiModelId: '',
-  ocrModelId: '',
+  cardModelUrl: '',
+  roiModelUrl: '',
+  ocrModelUrl: '',
 }
 
 export function useOcrExtraction() {
@@ -69,9 +69,9 @@ export function useOcrExtraction() {
 
   const canSubmit = useMemo(() => {
     return (
-      selectedModels.cardModelId &&
-      selectedModels.roiModelId &&
-      selectedModels.ocrModelId &&
+      selectedModels.cardModelUrl &&
+      selectedModels.roiModelUrl &&
+      selectedModels.ocrModelUrl &&
       imageFile &&
       status !== 'loading'
     )
