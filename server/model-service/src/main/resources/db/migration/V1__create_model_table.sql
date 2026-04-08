@@ -1,18 +1,19 @@
-DO $$
-BEGIN
-    -- Create the enum type only if it doesn't already exist
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'model_type') THEN
-        CREATE TYPE model_type AS ENUM ('CARD_DETECTION', 'ROI_DETECTION', 'OCR');
-    END IF;
-END
-$$;
+CREATE TABLE ai_models (
+                           id BIGSERIAL PRIMARY KEY,
+                           name VARCHAR(255),
+                           type VARCHAR(50) DEFAULT 'ROI_DETECTION',
 
-CREATE TABLE IF NOT EXISTS ai_models (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    type model_type NOT NULL,
-    version VARCHAR(50),
-    accuracy REAL,
-    is_active BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                           epochs INTEGER,
+                           batch_size INTEGER,
+                        model_file_path VARCHAR(255),
+
+                           dataset_id BIGINT,
+
+                           status VARCHAR(20) DEFAULT 'PENDING',
+
+                           progress_percent INTEGER DEFAULT 0,
+
+                           latest_log TEXT,
+
+                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

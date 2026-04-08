@@ -2,9 +2,9 @@ package com.example.model_service.service;
 
 import com.example.model_service.dto.ActiveModelsResponseDto;
 import com.example.model_service.dto.ModelItemDto;
-import com.example.model_service.entity.Model;
+import com.example.model_service.entity.AiModel;
 import com.example.model_service.enums.ModelType;
-import com.example.model_service.repository.ModelRepository;
+import com.example.model_service.repository.AiModelRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,17 +16,17 @@ import java.util.List;
 @Slf4j
 public class ModelBusinessService {
 
-    private final ModelRepository modelRepository;
+    private final AiModelRepository aiModelRepository;
 
     public ActiveModelsResponseDto getActiveModels() {
         log.info("Fetching all active models");
 
-        List<Model> cardDetectionModels = modelRepository
-            .findByTypeAndIsActive(ModelType.CARD_DETECTION, true);
-        List<Model> roiDetectionModels = modelRepository
-            .findByTypeAndIsActive(ModelType.ROI_DETECTION, true);
-        List<Model> ocrModels = modelRepository
-            .findByTypeAndIsActive(ModelType.OCR, true);
+        List<AiModel> cardDetectionModels = aiModelRepository
+            .findByTypeAndStatus(ModelType.CARD_DETECTION.toString(), AiModel.Status.SUCCESS);
+        List<AiModel> roiDetectionModels = aiModelRepository
+            .findByTypeAndStatus(ModelType.ROI_DETECTION.toString(), AiModel.Status.SUCCESS);
+        List<AiModel> ocrModels = aiModelRepository
+            .findByTypeAndStatus(ModelType.OCR.toString(), AiModel.Status.SUCCESS);
 
         return new ActiveModelsResponseDto(
             convertToDto(cardDetectionModels),
@@ -35,12 +35,12 @@ public class ModelBusinessService {
         );
     }
 
-    private List<ModelItemDto> convertToDto(List<Model> models) {
+    private List<ModelItemDto> convertToDto(List<AiModel> models) {
         return models.stream()
             .map(model -> new ModelItemDto(
                 String.valueOf(model.getId()),
                 model.getName(),
-                model.getUrl()
+                model.getModelFilePath()
             ))
             .toList();
     }
