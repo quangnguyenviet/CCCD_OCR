@@ -7,14 +7,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 @Component
 public class TrainingAsyncWorker {
@@ -53,6 +62,7 @@ public class TrainingAsyncWorker {
     @Async
     public void processZipAndTrain(Long modelId, String filePath, int epochs, int batchSize) {
         AiModel model = repository.findById(modelId).orElseThrow();
+        Path logFilePath = null;
 
         if (model.getStatus() == AiModel.Status.STOPPED) {
             updateStatus(model, AiModel.Status.STOPPED, model.getProgressPercent(), "[INFO] Job đã được dừng trước khi khởi chạy.");
@@ -61,10 +71,12 @@ public class TrainingAsyncWorker {
 
         try {
             updateStatus(model, AiModel.Status.EXTRACTING, 5, "[INFO] Chuẩn bị chạy tiến trình huấn luyện từ file: " + filePath);
+            Path scriptPath = resolveTrainingScriptPath();
 
             List<String> command = new ArrayList<>();
             command.add(pythonExecutable);
-            command.add(trainingScriptPath);
+            command.add("-u");
+            command.add(scriptPath.toString());
             command.add("--zip");
             command.add(filePath);
             command.add("--epochs");
@@ -73,18 +85,39 @@ public class TrainingAsyncWorker {
             command.add(String.valueOf(batchSize));
 
             ProcessBuilder processBuilder = new ProcessBuilder(command);
+            processBuilder.directory(scriptPath.getParent().toFile());
             processBuilder.redirectErrorStream(true);
+            processBuilder.environment().put("PYTHONUNBUFFERED", "1");
+
+            Path logsDir = Paths.get(System.getProperty("java.io.tmpdir"), "training-logs");
+            Files.createDirectories(logsDir);
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            logFilePath = logsDir.resolve("training_" + modelId + "_" + timestamp + ".log");
 
             updateStatus(model, AiModel.Status.TRAINING, 10, "[INFO] Đã khởi chạy lệnh: " + String.join(" ", command));
+            updateStatus(model, AiModel.Status.TRAINING, 10, "[INFO] Log file: " + logFilePath);
 
             Process process = processBuilder.start();
             runningProcesses.put(modelId, process);
 
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            try (BufferedWriter logWriter = Files.newBufferedWriter(
+                    logFilePath,
+                    StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.APPEND);
+                 BufferedReader reader = new BufferedReader(
+                         new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+
+                writeLogLine(logWriter, "[INFO] Started at: " + LocalDateTime.now());
+                writeLogLine(logWriter, "[INFO] Model ID: " + modelId);
+                writeLogLine(logWriter, "[INFO] Command: " + String.join(" ", command));
+                writeLogLine(logWriter, "[INFO] Working dir: " + scriptPath.getParent());
+                writeLogLine(logWriter, "[INFO] Dataset ZIP: " + filePath);
+
                 String line;
                 while ((line = reader.readLine()) != null) {
                     String trimmed = line.trim();
+                    writeLogLine(logWriter, line);
 
                     if (trimmed.startsWith("PROGRESS=")) {
                         try {
@@ -108,28 +141,52 @@ public class TrainingAsyncWorker {
             int exitCode = process.waitFor();
             AiModel latest = repository.findById(modelId).orElseThrow();
             if (latest.getStatus() == AiModel.Status.STOPPED) {
-                latest.setLatestLog("[STOPPED] Tiến trình huấn luyện đã được dừng thủ công.");
+                latest.setLatestLog("[STOPPED] Tiến trình huấn luyện đã được dừng thủ công. Log file: " + logFilePath);
                 repository.save(latest);
             } else if (exitCode == 0) {
                 model.setStatus(AiModel.Status.SUCCESS);
                 model.setProgressPercent(100);
-                model.setLatestLog("[SUCCESS] Huấn luyện hoàn tất. Exited with code: 0");
+                model.setLatestLog("[SUCCESS] Huấn luyện hoàn tất. Exited with code: 0. Log file: " + logFilePath);
                 repository.save(model);
             } else {
-                updateStatus(model, AiModel.Status.FAILED, model.getProgressPercent(), "[ERROR] Tiến trình train thất bại. Exited with code: " + exitCode);
+                updateStatus(model, AiModel.Status.FAILED, model.getProgressPercent(), "[ERROR] Tiến trình train thất bại. Exited with code: " + exitCode + ". Log file: " + logFilePath);
             }
 
         } catch (Exception e) {
             AiModel latest = repository.findById(modelId).orElse(model);
             if (latest.getStatus() == AiModel.Status.STOPPED) {
-                updateStatus(latest, AiModel.Status.STOPPED, latest.getProgressPercent(), "[STOPPED] Tiến trình huấn luyện đã được dừng thủ công.");
+                updateStatus(latest, AiModel.Status.STOPPED, latest.getProgressPercent(), "[STOPPED] Tiến trình huấn luyện đã được dừng thủ công. Log file: " + logFilePath);
             } else {
                 // Bắt lỗi và cập nhật trạng thái FAILED
-                updateStatus(model, AiModel.Status.FAILED, model.getProgressPercent(), "[ERROR] Tiến trình thất bại: " + e.getMessage());
+                updateStatus(model, AiModel.Status.FAILED, model.getProgressPercent(), "[ERROR] Tiến trình thất bại: " + e.getMessage() + ". Log file: " + logFilePath);
             }
         } finally {
             runningProcesses.remove(modelId);
         }
+    }
+
+    private void writeLogLine(BufferedWriter writer, String line) throws IOException {
+        writer.write(line != null ? line : "");
+        writer.newLine();
+        writer.flush();
+    }
+
+    private Path resolveTrainingScriptPath() {
+        Path configured = Paths.get(trainingScriptPath);
+        if (configured.isAbsolute() && Files.isRegularFile(configured)) {
+            return configured.normalize();
+        }
+
+        Path cwd = Paths.get("").toAbsolutePath().normalize();
+        Path candidateInModelService = cwd.resolve("model-service").resolve(trainingScriptPath).normalize();
+        Path candidateInCwd = cwd.resolve(trainingScriptPath).normalize();
+
+        Path resolved = Stream.of(candidateInModelService, candidateInCwd)
+                .filter(Files::isRegularFile)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy training script: " + trainingScriptPath + " (cwd=" + cwd + ")"));
+
+        return resolved;
     }
 
     // Hàm phụ trợ để ghi log và % vào DB liên tục

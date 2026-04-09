@@ -1,7 +1,9 @@
 package com.example.model_service.service;
 
 import com.example.model_service.entity.AiModel;
+import com.example.model_service.entity.DatasetExport;
 import com.example.model_service.repository.AiModelRepository;
+import com.example.model_service.repository.DatasetExportRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +20,9 @@ public class TrainingService {
 
     @Autowired
     private AiModelRepository aiModelRepository;
+
+    @Autowired
+    private DatasetExportRepository datasetExportRepository;
 
     @Autowired
     private TrainingAsyncWorker asyncWorker;
@@ -53,6 +58,39 @@ public class TrainingService {
         }
 
         // 3. Trả về ID ngay lập tức, không chờ luồng Async chạy xong
+        return model.getId();
+    }
+
+    public Long createTrainingJobFromDataset(Long datasetId, String name, int epochs, int batchSize) {
+        DatasetExport datasetExport = datasetExportRepository.findById(datasetId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy dataset_id: " + datasetId));
+
+        AiModel model = new AiModel();
+        model.setName(name);
+        model.setEpochs(epochs);
+        model.setBatchSize(batchSize);
+        model.setDatasetId(datasetId);
+        model.setStatus(AiModel.Status.PENDING);
+        model.setLatestLog("Đã đưa vào hàng đợi. Đang chuẩn bị dataset từ CSDL...");
+
+        model = aiModelRepository.save(model);
+
+        try {
+            String tempDirPath = System.getProperty("java.io.tmpdir");
+            String datasetZipName = datasetExport.getZipFileName() != null && !datasetExport.getZipFileName().isBlank()
+                    ? datasetExport.getZipFileName()
+                    : ("dataset_" + datasetId + ".zip");
+
+            File tempFile = new File(tempDirPath + "/" + model.getId() + "_" + datasetZipName);
+            org.springframework.util.FileCopyUtils.copy(datasetExport.getZipData(), tempFile);
+
+            asyncWorker.processZipAndTrain(model.getId(), tempFile.getAbsolutePath(), epochs, batchSize);
+        } catch (Exception e) {
+            model.setStatus(AiModel.Status.FAILED);
+            model.setLatestLog("Lỗi khi chuẩn bị dataset từ CSDL: " + e.getMessage());
+            aiModelRepository.save(model);
+        }
+
         return model.getId();
     }
 

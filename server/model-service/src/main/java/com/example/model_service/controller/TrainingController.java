@@ -19,18 +19,33 @@ public class TrainingController {
     // API 2.1: Khởi tạo huấn luyện bằng file ZIP
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> trainWithZip(
-            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "dataset_id", required = false) Long datasetId,
             @RequestParam("name") String name,
             @RequestParam("epochs") Integer epochs,
             @RequestParam("batch_size") Integer batchSize) {
 
-        // Gọi Service xử lý và lấy về modelId ngay lập tức
-        Long modelId = trainingService.createTrainingJobFromZip(file, name, epochs, batchSize);
+        boolean hasFile = file != null && !file.isEmpty();
+        boolean hasDatasetId = datasetId != null;
+
+        if (hasFile == hasDatasetId) {
+            throw new RuntimeException("Vui lòng chọn đúng 1 nguồn dữ liệu: upload file ZIP hoặc dataset_id từ CSDL.");
+        }
+
+        Long modelId;
+        String acceptedMessage;
+        if (hasFile) {
+            modelId = trainingService.createTrainingJobFromZip(file, name, epochs, batchSize);
+            acceptedMessage = "Đã tiếp nhận file zip và đưa vào hàng đợi huấn luyện";
+        } else {
+            modelId = trainingService.createTrainingJobFromDataset(datasetId, name, epochs, batchSize);
+            acceptedMessage = "Đã tiếp nhận dataset từ CSDL và đưa vào hàng đợi huấn luyện";
+        }
 
         // Trả về JSON theo đúng đặc tả
         return ResponseEntity.accepted().body(Map.of(
                 "status", "accepted",
-                "message", "Đã tiếp nhận file zip và đưa vào hàng đợi huấn luyện",
+                "message", acceptedMessage,
                 "data", Map.of("model_id", modelId)
         ));
     }

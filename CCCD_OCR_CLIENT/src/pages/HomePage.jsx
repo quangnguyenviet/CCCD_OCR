@@ -16,6 +16,15 @@ function HomePage() {
           <Link className="button-link" to="/ocr">
             Open OCR page
           </Link>
+          <Link className="button-link" to="/training" style={{ marginLeft: '0.75rem' }}>
+            Open training page
+          </Link>
+          <Link className="button-link" to="/labeling" style={{ marginLeft: '0.75rem' }}>
+            Open labeling page
+          </Link>
+          <Link className="button-link" to="/dataset" style={{ marginLeft: '0.75rem' }}>
+            Open dataset page
+          </Link>
         </div>
       </section>
     </main>
