@@ -16,17 +16,19 @@ import java.util.List;
 @Slf4j
 public class ModelBusinessService {
 
+    private static final String MODEL_STATUS_COMPLETED = "COMPLETED";
+
     private final ModelRepository modelRepository;
 
     public ActiveModelsResponseDto getActiveModels() {
         log.info("Fetching all active models");
 
         List<Model> cardDetectionModels = modelRepository
-            .findByTypeAndIsActive(ModelType.CARD_DETECTION, true);
+            .findByTypeAndStatus(ModelType.CARD_DETECTION, MODEL_STATUS_COMPLETED);
         List<Model> roiDetectionModels = modelRepository
-            .findByTypeAndIsActive(ModelType.ROI_DETECTION, true);
+            .findByTypeAndStatus(ModelType.ROI_DETECTION, MODEL_STATUS_COMPLETED);
         List<Model> ocrModels = modelRepository
-            .findByTypeAndIsActive(ModelType.OCR, true);
+            .findByTypeAndStatus(ModelType.OCR, MODEL_STATUS_COMPLETED);
 
         return new ActiveModelsResponseDto(
             convertToDto(cardDetectionModels),
@@ -40,7 +42,7 @@ public class ModelBusinessService {
             .map(model -> new ModelItemDto(
                 String.valueOf(model.getId()),
                 model.getName(),
-                model.getUrl()
+                model.getUrl() != null && !model.getUrl().isBlank() ? model.getUrl() : model.getModelFilePath()
             ))
             .toList();
     }

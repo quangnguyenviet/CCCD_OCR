@@ -13,8 +13,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -35,20 +33,31 @@ public class Model {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private ModelType type;
 
-    @Column(length = 50)
-    private String version;
+    @Column(name = "epochs")
+    private Integer epochs;
+
+    @Column(name = "batch_size")
+    private Integer batchSize;
+
+    @Column(name = "model_file_path", length = 255)
+    private String modelFilePath;
 
     @Column(length = 1024)
     private String url;
 
-    @Column
-    private Float accuracy;
+    @Column(name = "dataset_id")
+    private Long datasetId;
 
-    @Column(name = "is_active", columnDefinition = "BOOLEAN DEFAULT FALSE")
-    private Boolean isActive;
+    @Column(name = "status", length = 20)
+    private String status;
+
+    @Column(name = "progress_percent")
+    private Integer progressPercent;
+
+    @Column(name = "latest_log", columnDefinition = "TEXT")
+    private String latestLog;
 
     @Column(name = "created_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", updatable = false)
     private LocalDateTime createdAt;

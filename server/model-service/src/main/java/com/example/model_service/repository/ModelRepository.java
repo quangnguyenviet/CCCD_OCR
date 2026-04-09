@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface ModelRepository extends JpaRepository<Model, Long> {
-    List<Model> findByTypeAndIsActive(ModelType type, Boolean isActive);
+    List<Model> findByTypeAndStatus(ModelType type, String status);
 }

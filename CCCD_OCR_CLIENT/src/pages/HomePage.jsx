@@ -16,6 +16,9 @@ function HomePage() {
           <Link className="button-link" to="/ocr">
             Open OCR page
           </Link>
+          <Link className="button-link" to="/labeling" style={{ marginLeft: '0.5rem' }}>
+            Open Labeling page
+          </Link>
         </div>
       </section>
     </main>
