@@ -19,6 +19,12 @@ function HomePage() {
           <Link className="button-link" to="/labeling" style={{ marginLeft: '0.5rem' }}>
             Open Labeling page
           </Link>
+          <Link className="button-link" to="/dataset" style={{ marginLeft: '0.5rem' }}>
+            Open Dataset page
+          </Link>
+          <Link className="button-link" to="/training" style={{ marginLeft: '0.5rem' }}>
+            Open Training page
+          </Link>
         </div>
       </section>
     </main>

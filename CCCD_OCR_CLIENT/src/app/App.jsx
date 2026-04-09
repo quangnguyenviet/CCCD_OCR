@@ -1,8 +1,10 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import DatasetPage from '@/pages/DatasetPage'
 import HomePage from '@/pages/HomePage'
 import LabelingPage from '@/pages/LabelingPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import OcrPage from '@/pages/OcrPage'
+import TrainingPage from '@/pages/TrainingPage'
 
 function App() {
   return (
@@ -10,6 +12,8 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/ocr" element={<OcrPage />} />
       <Route path="/labeling" element={<LabelingPage />} />
+      <Route path="/dataset" element={<DatasetPage />} />
+      <Route path="/training" element={<TrainingPage />} />
       <Route path="/home" element={<Navigate to="/" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

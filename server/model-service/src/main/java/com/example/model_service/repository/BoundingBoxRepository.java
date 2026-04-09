@@ -10,5 +10,7 @@ import java.util.List;
 public interface BoundingBoxRepository extends JpaRepository<BoundingBox, Long> {
     List<BoundingBox> findByImageId(Long imageId);
 
+    long countByImageId(Long imageId);
+
     void deleteByImageId(Long imageId);
 }
