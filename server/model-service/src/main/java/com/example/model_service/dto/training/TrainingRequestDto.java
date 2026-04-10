@@ -13,7 +13,5 @@ public class TrainingRequestDto {
     private Double valRatio;
     private Double testRatio;
     private Integer imageSize;
-    private String baseWeights;
-    private String projectName;
-    private String runName;
+    private String name;
 }

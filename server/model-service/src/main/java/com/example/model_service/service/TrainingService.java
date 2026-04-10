@@ -57,9 +57,9 @@ public class TrainingService {
     public TrainingResponseDto startTraining(TrainingRequestDto request) throws IOException {
         validateRequest(request);
 
-        String effectiveRunName = request.getRunName() == null || request.getRunName().isBlank()
+        String effectiveRunName = request.getName() == null || request.getName().isBlank()
             ? "cccd_yolo_run"
-            : request.getRunName().trim();
+            : request.getName().trim();
 
         DatasetEntity dataset = datasetRepository.findById(request.getDatasetId())
             .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy dataset với id=" + request.getDatasetId()));
@@ -85,7 +85,7 @@ public class TrainingService {
         command.add("--imgsz");
         command.add(String.valueOf(request.getImageSize() == null ? 640 : request.getImageSize()));
         command.add("--weights");
-        command.add(request.getBaseWeights() == null || request.getBaseWeights().isBlank() ? "yolov8n.pt" : request.getBaseWeights());
+        command.add("yolov8n.pt");
         command.add("--project");
         command.add(splitResult.modelOutputDir.toString());
         command.add("--name");

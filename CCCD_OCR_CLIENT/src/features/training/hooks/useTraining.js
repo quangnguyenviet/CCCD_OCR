@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   getDatasets,
   getTrainingLogs,
+  getModelMetrics,
   registerTrainedModel,
   startTraining,
 } from '@/features/training/services/trainingApi'
@@ -15,9 +16,7 @@ const defaultForm = {
   valRatio: 0.2,
   testRatio: 0.1,
   imageSize: 640,
-  baseWeights: 'yolov8n.pt',
-  projectName: 'cccd_project',
-  runName: 'cccd_yolo',
+  name: 'cccd_yolo',
 }
 
 export function useTraining() {
@@ -29,6 +28,8 @@ export function useTraining() {
   const [result, setResult] = useState(null)
   const [trainingLogs, setTrainingLogs] = useState('')
   const [logsLoading, setLogsLoading] = useState(false)
+  const [metrics, setMetrics] = useState(null)
+  const [metricsLoading, setMetricsLoading] = useState(false)
   const [form, setForm] = useState(defaultForm)
 
   useEffect(() => {
@@ -115,9 +116,7 @@ export function useTraining() {
         valRatio: Number(form.valRatio),
         testRatio: Number(form.testRatio),
         imageSize: Number(form.imageSize),
-        baseWeights: form.baseWeights,
-        projectName: form.projectName,
-        runName: form.runName,
+        name: form.name,
       }
 
       const response = await startTraining(payload)
@@ -142,7 +141,7 @@ export function useTraining() {
       setSuccessMessage('')
 
       const response = await registerTrainedModel({
-        name: form.runName || result.runName,
+        name: form.name || result.name,
         type: form.modelType,
         datasetId: Number(form.datasetId),
         modelFilePath: result.bestModelPath,
@@ -153,6 +152,19 @@ export function useTraining() {
       })
 
       setSuccessMessage(`Đã lưu model huấn luyện: ${response.name}`)
+      
+      // Fetch and display metrics
+      if (response.id) {
+        try {
+          setMetricsLoading(true)
+          const metricsData = await getModelMetrics(response.id)
+          setMetrics(metricsData)
+        } catch (error) {
+          console.warn('Không thể lấy metrics:', error.message)
+        } finally {
+          setMetricsLoading(false)
+        }
+      }
     } catch (error) {
       setErrorMessage(error.message)
     } finally {
@@ -168,6 +180,8 @@ export function useTraining() {
     result,
     trainingLogs,
     logsLoading,
+    metrics,
+    metricsLoading,
     modelType: form.modelType,
     starting,
     canStart,

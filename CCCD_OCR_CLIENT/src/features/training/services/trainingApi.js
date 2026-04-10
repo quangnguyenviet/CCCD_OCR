@@ -55,3 +55,13 @@ export async function registerTrainedModel(payload) {
     throw new Error(resolveApiErrorMessage(error))
   }
 }
+
+export async function getModelMetrics(modelId) {
+  try {
+    const response = await apiClient.get(`/api/models/${modelId}/metrics`)
+    return response.data
+  } catch (error) {
+    throw new Error(resolveApiErrorMessage(error))
+  }
+}
+

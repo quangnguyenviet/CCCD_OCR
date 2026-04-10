@@ -10,6 +10,8 @@ function TrainingWorkspace() {
     result,
     trainingLogs,
     logsLoading,
+    metrics,
+    metricsLoading,
     modelType,
     starting,
     canStart,
@@ -110,31 +112,12 @@ function TrainingWorkspace() {
             </label>
           </div>
 
-          <div className="input-grid">
-            <label>
-              Base weights
-              <input
-                type="text"
-                value={form.baseWeights}
-                onChange={(event) => updateField('baseWeights', event.target.value)}
-              />
-            </label>
-            <label>
-              Project name
-              <input
-                type="text"
-                value={form.projectName}
-                onChange={(event) => updateField('projectName', event.target.value)}
-              />
-            </label>
-          </div>
-
           <label>
-            Run name
+            Tên
             <input
               type="text"
-              value={form.runName}
-              onChange={(event) => updateField('runName', event.target.value)}
+              value={form.name}
+              onChange={(event) => updateField('name', event.target.value)}
             />
           </label>
 
@@ -172,7 +155,7 @@ function TrainingWorkspace() {
             <div><strong>Data yaml:</strong> {result.dataYamlPath}</div>
             <div><strong>Output dir:</strong> {result.modelOutputDir}</div>
             <div><strong>Best model:</strong> {result.bestModelPath}</div>
-            <div><strong>Run name:</strong> {result.runName}</div>
+            <div><strong>Tên:</strong> {result.name}</div>
             <div><strong>Epoch:</strong> {result.epochs}</div>
             <div><strong>Batch size:</strong> {result.batchSize}</div>
             <div><strong>Split:</strong> train {result.trainRatio} / val {result.valRatio} / test {result.testRatio}</div>
@@ -183,6 +166,26 @@ function TrainingWorkspace() {
           <h4>Live training log {logsLoading ? '(đang cập nhật...)' : ''}</h4>
           <pre className="code-box">{trainingLogs || 'Chưa có log.'}</pre>
         </div>
+
+        {metrics ? (
+          <div className="result-box" style={{ marginTop: '1rem' }}>
+            <h4>Training Metrics {metricsLoading ? '(đang cập nhật...)' : ''}</h4>
+            <div>
+              <div><strong>Model:</strong> {metrics.name}</div>
+              <div><strong>Status:</strong> {metrics.status}</div>
+              {metrics.trainingStartTime && <div><strong>Start time:</strong> {new Date(metrics.trainingStartTime).toLocaleString('vi-VN')}</div>}
+              {metrics.trainingEndTime && <div><strong>End time:</strong> {new Date(metrics.trainingEndTime).toLocaleString('vi-VN')}</div>}
+              {metrics.trainingDurationSeconds && <div><strong>Duration:</strong> {Math.round(metrics.trainingDurationSeconds / 60)} minutes</div>}
+              {metrics.finalLoss !== null && metrics.finalLoss !== undefined && <div><strong>Final Loss:</strong> {metrics.finalLoss.toFixed(4)}</div>}
+              {metrics.finalMetrics && (
+                <div>
+                  <strong>Metrics:</strong>
+                  <pre style={{ fontSize: '0.9em', backgroundColor: '#f5f5f5', padding: '0.5rem' }}>{JSON.stringify(JSON.parse(metrics.finalMetrics), null, 2)}</pre>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
 
         <div className="dataset-list" style={{ marginTop: '1rem' }}>
           {datasets.map((dataset) => (

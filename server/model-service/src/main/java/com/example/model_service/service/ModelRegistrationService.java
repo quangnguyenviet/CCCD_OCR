@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class ModelRegistrationService {
@@ -17,6 +19,7 @@ public class ModelRegistrationService {
 
     private final ModelRepository modelRepository;
     private final DatasetRepository datasetRepository;
+    private final TrainingMetricsService trainingMetricsService;
 
     @Transactional
     public RegisterTrainedModelResponseDto registerTrainedModel(RegisterTrainedModelRequestDto request) {
@@ -36,8 +39,19 @@ public class ModelRegistrationService {
         model.setStatus(STATUS_COMPLETED);
         model.setProgressPercent(100);
         model.setLatestLog(request.getTrainingLogPath());
+        
+        // Set training metadata
+        LocalDateTime now = LocalDateTime.now();
+        model.setTrainingStartTime(now);
+        model.setTrainingEndTime(now);
 
         Model saved = modelRepository.save(model);
+        
+        // Parse and save training metrics from log file
+        if (request.getTrainingLogPath() != null && !request.getTrainingLogPath().isBlank()) {
+            trainingMetricsService.saveTrainingMetrics(saved.getId(), now, request.getTrainingLogPath());
+        }
+        
         return new RegisterTrainedModelResponseDto(
             saved.getId(),
             saved.getName(),

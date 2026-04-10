@@ -15,7 +15,7 @@ public class TrainingResponseDto {
     private String bestModelPath;
     private String dataYamlPath;
     private String modelOutputDir;
-    private String runName;
+    private String name;
     private Integer epochs;
     private Integer batchSize;
     private Double trainRatio;

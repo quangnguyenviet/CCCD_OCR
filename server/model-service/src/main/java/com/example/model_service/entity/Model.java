@@ -59,6 +59,21 @@ public class Model {
     @Column(name = "latest_log", columnDefinition = "TEXT")
     private String latestLog;
 
+    @Column(name = "training_start_time")
+    private LocalDateTime trainingStartTime;
+
+    @Column(name = "training_end_time")
+    private LocalDateTime trainingEndTime;
+
+    @Column(name = "training_duration_seconds")
+    private Integer trainingDurationSeconds;
+
+    @Column(name = "final_loss")
+    private Double finalLoss;
+
+    @Column(name = "final_metrics", columnDefinition = "TEXT")
+    private String finalMetrics;
+
     @Column(name = "created_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", updatable = false)
     private LocalDateTime createdAt;
 }
