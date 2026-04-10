@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
+  getTrainingStatus,
   getModelMetrics,
   getTrainingLogs,
   registerTrainedModel,
+  stopTraining,
 } from '@/features/training/services/trainingApi'
 import './TrainingWorkspace.css'
 
@@ -21,23 +23,26 @@ function TrainingMonitorWorkspace() {
   const [savingModel, setSavingModel] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [stoppingTraining, setStoppingTraining] = useState(false)
+  const [isTrainingRunning, setIsTrainingRunning] = useState(Boolean(trainingResult))
 
   const canSaveModel = useMemo(() => {
-    return Boolean(trainingResult?.bestModelPath) && !savingModel
-  }, [trainingResult?.bestModelPath, savingModel])
+    return Boolean(trainingResult?.bestModelPath) && !savingModel && !isTrainingRunning
+  }, [trainingResult?.bestModelPath, savingModel, isTrainingRunning])
 
   const trainingInfoText = useMemo(() => {
     if (!trainingResult) return ''
     return [
       `Status: ${trainingResult.status ?? '-'}`,
       `Dataset: ${trainingResult.datasetName ?? '-'}`,
+      `Tiến trình: ${isTrainingRunning ? 'Đang huấn luyện' : 'Đã hoàn thành'}`,
       `Log file: ${trainingResult.logFilePath ?? '-'}`,
       `Best model: ${trainingResult.bestModelPath ?? '-'}`,
       `Tên: ${trainingResult.name ?? '-'}`,
       `Epoch: ${trainingResult.epochs ?? '-'}`,
       `Batch size: ${trainingResult.batchSize ?? '-'}`,
     ].join('\n')
-  }, [trainingResult])
+  }, [trainingResult, isTrainingRunning])
 
   const metricsText = useMemo(() => {
     if (!metrics) return ''
@@ -56,7 +61,7 @@ function TrainingMonitorWorkspace() {
       `Status: ${metrics.status ?? '-'}`,
       `Start time: ${metrics.trainingStartTime ? new Date(metrics.trainingStartTime).toLocaleString('vi-VN') : '-'}`,
       `End time: ${metrics.trainingEndTime ? new Date(metrics.trainingEndTime).toLocaleString('vi-VN') : '-'}`,
-      `Duration: ${metrics.trainingDurationSeconds ? Math.round(metrics.trainingDurationSeconds / 60) + ' minutes' : '-'}`,
+      `Duration: ${metrics.trainingDurationSeconds !== null && metrics.trainingDurationSeconds !== undefined ? Math.round(metrics.trainingDurationSeconds / 60) + ' minutes' : '-'}`,
       `Final Loss: ${metrics.finalLoss !== null && metrics.finalLoss !== undefined ? metrics.finalLoss.toFixed(4) : '-'}`,
       '',
       'Metrics:',
@@ -75,9 +80,13 @@ function TrainingMonitorWorkspace() {
     async function loadLogs() {
       try {
         setLogsLoading(true)
-        const response = await getTrainingLogs(trainingResult.logFilePath, 300)
+        const [response, status] = await Promise.all([
+          getTrainingLogs(trainingResult.logFilePath, 300),
+          getTrainingStatus(),
+        ])
         if (!mounted) return
         setTrainingLogs(response?.content ?? '')
+        setIsTrainingRunning(Boolean(status?.running))
       } catch (error) {
         if (!mounted) return
         setTrainingLogs(`Không đọc được log: ${error.message}`)
@@ -98,6 +107,11 @@ function TrainingMonitorWorkspace() {
   async function handleRegisterTrainedModel() {
     if (!trainingResult?.bestModelPath) {
       setErrorMessage('Chưa có đường dẫn model huấn luyện hợp lệ.')
+      return
+    }
+
+    if (isTrainingRunning) {
+      setErrorMessage('Mô hình đang huấn luyện. Chỉ được lưu sau khi huấn luyện hoàn tất.')
       return
     }
 
@@ -137,6 +151,23 @@ function TrainingMonitorWorkspace() {
     }
   }
 
+  async function handleStopTraining() {
+    try {
+      setStoppingTraining(true)
+      setErrorMessage('')
+      setSuccessMessage('')
+
+      await stopTraining()
+
+      setSuccessMessage('Đã dừng huấn luyện.')
+      setIsTrainingRunning(false)
+    } catch (error) {
+      setErrorMessage('Không thể dừng huấn luyện: ' + (error.message || 'lỗi không xác định'))
+    } finally {
+      setStoppingTraining(false)
+    }
+  }
+
   if (!trainingResult) {
     return (
       <div className="training-layout">
@@ -168,7 +199,15 @@ function TrainingMonitorWorkspace() {
             disabled={!canSaveModel}
             onClick={handleRegisterTrainedModel}
           >
-            {savingModel ? 'Đang lưu model...' : 'Dùng mô hình huấn luyện'}
+            {savingModel ? 'Đang lưu...' : 'Lưu mô hình'}
+          </button>
+          <button
+            type="button"
+            className="danger-btn"
+            disabled={stoppingTraining || !isTrainingRunning}
+            onClick={handleStopTraining}
+          >
+            {stoppingTraining ? 'Đang dừng...' : 'Dừng huấn luyện'}
           </button>
           <Link className="button-link" to="/training" style={{ marginLeft: '0.5rem' }}>
             Tạo phiên khác

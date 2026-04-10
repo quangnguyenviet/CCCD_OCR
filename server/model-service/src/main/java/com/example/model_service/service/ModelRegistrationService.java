@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 
 @Service
@@ -76,6 +78,9 @@ public class ModelRegistrationService {
         }
         if (request.getModelFilePath() == null || request.getModelFilePath().isBlank()) {
             throw new IllegalArgumentException("Thiếu đường dẫn model huấn luyện.");
+        }
+        if (!Files.exists(Paths.get(request.getModelFilePath()))) {
+            throw new IllegalArgumentException("Mô hình chưa huấn luyện xong hoặc không tìm thấy file model.");
         }
     }
 }

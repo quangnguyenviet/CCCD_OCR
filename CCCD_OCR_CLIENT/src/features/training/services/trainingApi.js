@@ -47,6 +47,24 @@ export async function getTrainingLogs(logFilePath, tailLines = 200) {
   }
 }
 
+export async function stopTraining() {
+  try {
+    const response = await apiClient.post('/api/training/stop')
+    return response.data
+  } catch (error) {
+    throw new Error(resolveApiErrorMessage(error))
+  }
+}
+
+export async function getTrainingStatus() {
+  try {
+    const response = await apiClient.get('/api/training/status')
+    return response.data
+  } catch (error) {
+    throw new Error(resolveApiErrorMessage(error))
+  }
+}
+
 export async function registerTrainedModel(payload) {
   try {
     const response = await apiClient.post('/api/models/register-trained', payload)

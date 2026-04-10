@@ -39,7 +39,8 @@
 }
 
 .primary-btn,
-.secondary-btn {
+.secondary-btn,
+.danger-btn {
   border: none;
   border-radius: 8px;
   padding: 0.625rem 1rem;
@@ -57,8 +58,14 @@
   color: #0f172a;
 }
 
+.danger-btn {
+  background: #dc2626;
+  color: #fff;
+}
+
 .primary-btn:disabled,
-.secondary-btn:disabled {
+.secondary-btn:disabled,
+.danger-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

@@ -1,4 +1,7 @@
 import argparse
+import csv
+import json
+from datetime import datetime
 from pathlib import Path
 
 from ultralytics import YOLO
@@ -22,6 +25,7 @@ def parse_args():
 def main():
     args = parse_args()
     data_path = Path(args.data).resolve()
+    started_at = datetime.now().astimezone()
 
     print('Training configuration:')
     print(f'  data: {data_path}')
@@ -44,6 +48,70 @@ def main():
         project=args.project,
         name=args.name,
     )
+
+    ended_at = datetime.now().astimezone()
+
+    save_dir = Path(getattr(results, 'save_dir', Path(args.project) / args.name)).resolve()
+    results_csv = save_dir / 'results.csv'
+
+    final_loss = None
+    metrics = {}
+
+    if results_csv.exists():
+        with results_csv.open('r', encoding='utf-8', newline='') as f:
+            rows = list(csv.DictReader(f))
+            if rows:
+                last = rows[-1]
+
+                def to_float(key):
+                    value = last.get(key)
+                    if value is None or value == '':
+                        return None
+                    try:
+                        return float(value)
+                    except ValueError:
+                        return None
+
+                val_box = to_float('val/box_loss')
+                val_cls = to_float('val/cls_loss')
+                val_dfl = to_float('val/dfl_loss')
+                train_box = to_float('train/box_loss')
+                train_cls = to_float('train/cls_loss')
+                train_dfl = to_float('train/dfl_loss')
+
+                if any(v is not None for v in [val_box, val_cls, val_dfl]):
+                    final_loss = (val_box or 0.0) + (val_cls or 0.0) + (val_dfl or 0.0)
+                elif any(v is not None for v in [train_box, train_cls, train_dfl]):
+                    final_loss = (train_box or 0.0) + (train_cls or 0.0) + (train_dfl or 0.0)
+
+                precision = to_float('metrics/precision(B)')
+                recall = to_float('metrics/recall(B)')
+                map50 = to_float('metrics/mAP50(B)')
+                map5095 = to_float('metrics/mAP50-95(B)')
+                fitness = to_float('fitness')
+
+                if precision is not None:
+                    metrics['precision'] = precision
+                if recall is not None:
+                    metrics['recall'] = recall
+                if map50 is not None:
+                    metrics['mAP50'] = map50
+                if map5095 is not None:
+                    metrics['mAP50-95'] = map5095
+                if fitness is not None:
+                    metrics['fitness'] = fitness
+
+    summary = {
+        'training_start_time': started_at.isoformat(),
+        'training_end_time': ended_at.isoformat(),
+        'duration_seconds': int((ended_at - started_at).total_seconds()),
+        'save_dir': str(save_dir),
+        'results_csv': str(results_csv),
+        'final_loss': final_loss,
+        'metrics': metrics,
+    }
+
+    print('TRAINING_SUMMARY_JSON:' + json.dumps(summary, ensure_ascii=False))
 
     print(results)
 

@@ -39,6 +39,7 @@ public class TrainingService {
 
     private static final DateTimeFormatter FOLDER_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
     private static final double RATIO_TOLERANCE = 0.0001;
+    private static volatile Process currentTrainingProcess = null;
 
     private final DatasetRepository datasetRepository;
     private final DatasetItemRepository datasetItemRepository;
@@ -101,7 +102,9 @@ public class TrainingService {
         processBuilder.directory(scriptPath.getParent().toFile());
         processBuilder.redirectErrorStream(true);
         processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile.toFile()));
-        processBuilder.start();
+        Process process = processBuilder.start();
+        currentTrainingProcess = process;
+        process.onExit().thenRun(() -> currentTrainingProcess = null);
 
         return new TrainingResponseDto(
             "STARTED",
@@ -338,6 +341,17 @@ public class TrainingService {
 
     private String toForwardSlash(String value) {
         return value.replace("\\", "/");
+    }
+
+    public void stopTraining() {
+        if (currentTrainingProcess != null && currentTrainingProcess.isAlive()) {
+            currentTrainingProcess.destroyForcibly();
+            currentTrainingProcess = null;
+        }
+    }
+
+    public boolean isTrainingRunning() {
+        return currentTrainingProcess != null && currentTrainingProcess.isAlive();
     }
 
     private record SplitResult(Path exportDir, Path dataYaml, Path modelOutputDir) {
