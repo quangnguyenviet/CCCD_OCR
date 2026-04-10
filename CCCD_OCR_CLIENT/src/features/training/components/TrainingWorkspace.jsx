@@ -7,18 +7,12 @@ function TrainingWorkspace() {
     loadingDatasets,
     errorMessage,
     successMessage,
-    result,
-    trainingLogs,
-    logsLoading,
-    metrics,
-    metricsLoading,
     modelType,
     starting,
     canStart,
     form,
     updateField,
     handleStartTraining,
-    handleRegisterTrainedModel,
   } = useTraining()
 
   return (
@@ -125,14 +119,6 @@ function TrainingWorkspace() {
             <button type="button" className="primary-btn" disabled={!canStart} onClick={handleStartTraining}>
               {starting ? 'Đang huấn luyện...' : 'Bắt đầu huấn luyện'}
             </button>
-            <button
-              type="button"
-              className="secondary-btn"
-              disabled={!result?.bestModelPath || starting}
-              onClick={handleRegisterTrainedModel}
-            >
-              Dùng mô hình huấn luyện
-            </button>
           </div>
 
           <small>{loadingDatasets ? 'Đang tải dataset...' : `Tổng dataset: ${datasets.length}`}</small>
@@ -140,63 +126,6 @@ function TrainingWorkspace() {
 
         {errorMessage ? <p className="message error">{errorMessage}</p> : null}
         {successMessage ? <p className="message success">{successMessage}</p> : null}
-      </section>
-
-      <section className="training-panel">
-        <h3>Kết quả khởi chạy</h3>
-        {!result ? <p>Chưa có phiên huấn luyện nào.</p> : null}
-
-        {result ? (
-          <div className="result-box">
-            <div><strong>Status:</strong> {result.status}</div>
-            <div><strong>Dataset:</strong> {result.datasetName}</div>
-            <div><strong>Export dir:</strong> {result.exportDir}</div>
-            <div><strong>Log file:</strong> {result.logFilePath}</div>
-            <div><strong>Data yaml:</strong> {result.dataYamlPath}</div>
-            <div><strong>Output dir:</strong> {result.modelOutputDir}</div>
-            <div><strong>Best model:</strong> {result.bestModelPath}</div>
-            <div><strong>Tên:</strong> {result.name}</div>
-            <div><strong>Epoch:</strong> {result.epochs}</div>
-            <div><strong>Batch size:</strong> {result.batchSize}</div>
-            <div><strong>Split:</strong> train {result.trainRatio} / val {result.valRatio} / test {result.testRatio}</div>
-          </div>
-        ) : null}
-
-        <div className="result-box" style={{ marginTop: '1rem' }}>
-          <h4>Live training log {logsLoading ? '(đang cập nhật...)' : ''}</h4>
-          <pre className="code-box">{trainingLogs || 'Chưa có log.'}</pre>
-        </div>
-
-        {metrics ? (
-          <div className="result-box" style={{ marginTop: '1rem' }}>
-            <h4>Training Metrics {metricsLoading ? '(đang cập nhật...)' : ''}</h4>
-            <div>
-              <div><strong>Model:</strong> {metrics.name}</div>
-              <div><strong>Status:</strong> {metrics.status}</div>
-              {metrics.trainingStartTime && <div><strong>Start time:</strong> {new Date(metrics.trainingStartTime).toLocaleString('vi-VN')}</div>}
-              {metrics.trainingEndTime && <div><strong>End time:</strong> {new Date(metrics.trainingEndTime).toLocaleString('vi-VN')}</div>}
-              {metrics.trainingDurationSeconds && <div><strong>Duration:</strong> {Math.round(metrics.trainingDurationSeconds / 60)} minutes</div>}
-              {metrics.finalLoss !== null && metrics.finalLoss !== undefined && <div><strong>Final Loss:</strong> {metrics.finalLoss.toFixed(4)}</div>}
-              {metrics.finalMetrics && (
-                <div>
-                  <strong>Metrics:</strong>
-                  <pre style={{ fontSize: '0.9em', backgroundColor: '#f5f5f5', padding: '0.5rem' }}>{JSON.stringify(JSON.parse(metrics.finalMetrics), null, 2)}</pre>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : null}
-
-        <div className="dataset-list" style={{ marginTop: '1rem' }}>
-          {datasets.map((dataset) => (
-            <div key={dataset.id} className="dataset-item">
-              <strong>{dataset.datasetName}</strong>
-              <div>ID: {dataset.id}</div>
-              <div>Total images: {dataset.totalImages}</div>
-              <div>Created at: {dataset.createdAt ?? '-'}</div>
-            </div>
-          ))}
-        </div>
       </section>
     </div>
   )

@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   getDatasets,
-  getTrainingLogs,
-  getModelMetrics,
-  registerTrainedModel,
   startTraining,
 } from '@/features/training/services/trainingApi'
 
@@ -20,16 +18,12 @@ const defaultForm = {
 }
 
 export function useTraining() {
+  const navigate = useNavigate()
   const [datasets, setDatasets] = useState([])
   const [loadingDatasets, setLoadingDatasets] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [starting, setStarting] = useState(false)
-  const [result, setResult] = useState(null)
-  const [trainingLogs, setTrainingLogs] = useState('')
-  const [logsLoading, setLogsLoading] = useState(false)
-  const [metrics, setMetrics] = useState(null)
-  const [metricsLoading, setMetricsLoading] = useState(false)
   const [form, setForm] = useState(defaultForm)
 
   useEffect(() => {
@@ -56,37 +50,6 @@ export function useTraining() {
     }
   }, [])
 
-  useEffect(() => {
-    if (!result?.logFilePath) {
-      setTrainingLogs('')
-      return undefined
-    }
-
-    let mounted = true
-
-    async function loadLogs() {
-      try {
-        setLogsLoading(true)
-        const response = await getTrainingLogs(result.logFilePath, 300)
-        if (!mounted) return
-        setTrainingLogs(response?.content ?? '')
-      } catch (error) {
-        if (!mounted) return
-        setTrainingLogs(`Không đọc được log: ${error.message}`)
-      } finally {
-        if (mounted) setLogsLoading(false)
-      }
-    }
-
-    loadLogs()
-    const timer = setInterval(loadLogs, 2000)
-
-    return () => {
-      mounted = false
-      clearInterval(timer)
-    }
-  }, [result?.logFilePath])
-
   const canStart = useMemo(() => {
     const datasetSelected = String(form.datasetId).trim().length > 0
     const ratioSum = Number(form.trainRatio) + Number(form.valRatio) + Number(form.testRatio)
@@ -106,7 +69,6 @@ export function useTraining() {
       setStarting(true)
       setErrorMessage('')
       setSuccessMessage('')
-      setResult(null)
 
       const payload = {
         datasetId: Number(form.datasetId),
@@ -120,51 +82,17 @@ export function useTraining() {
       }
 
       const response = await startTraining(payload)
-      setResult(response)
       setSuccessMessage('Đã khởi chạy huấn luyện.')
-    } catch (error) {
-      setErrorMessage(error.message)
-    } finally {
-      setStarting(false)
-    }
-  }
 
-  async function handleRegisterTrainedModel() {
-    if (!result?.bestModelPath) {
-      setErrorMessage('Chưa có đường dẫn model huấn luyện hợp lệ.')
-      return
-    }
-
-    try {
-      setStarting(true)
-      setErrorMessage('')
-      setSuccessMessage('')
-
-      const response = await registerTrainedModel({
-        name: form.name || result.name,
-        type: form.modelType,
-        datasetId: Number(form.datasetId),
-        modelFilePath: result.bestModelPath,
-        url: result.bestModelPath,
-        epochs: Number(form.epochs),
-        batchSize: Number(form.batchSize),
-        trainingLogPath: result.logFilePath,
+      navigate('/training/monitor', {
+        state: {
+          trainingResult: response,
+          trainingInput: {
+            ...payload,
+            modelType: form.modelType,
+          },
+        },
       })
-
-      setSuccessMessage(`Đã lưu model huấn luyện: ${response.name}`)
-      
-      // Fetch and display metrics
-      if (response.id) {
-        try {
-          setMetricsLoading(true)
-          const metricsData = await getModelMetrics(response.id)
-          setMetrics(metricsData)
-        } catch (error) {
-          console.warn('Không thể lấy metrics:', error.message)
-        } finally {
-          setMetricsLoading(false)
-        }
-      }
     } catch (error) {
       setErrorMessage(error.message)
     } finally {
@@ -177,17 +105,11 @@ export function useTraining() {
     loadingDatasets,
     errorMessage,
     successMessage,
-    result,
-    trainingLogs,
-    logsLoading,
-    metrics,
-    metricsLoading,
     modelType: form.modelType,
     starting,
     canStart,
     form,
     updateField,
     handleStartTraining,
-    handleRegisterTrainedModel,
   }
 }

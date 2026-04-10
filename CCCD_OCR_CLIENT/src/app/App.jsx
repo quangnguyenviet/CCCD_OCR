@@ -4,6 +4,7 @@ import HomePage from '@/pages/HomePage'
 import LabelingPage from '@/pages/LabelingPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import OcrPage from '@/pages/OcrPage'
+import TrainingMonitorPage from '@/pages/TrainingMonitorPage'
 import TrainingPage from '@/pages/TrainingPage'
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
       <Route path="/labeling" element={<LabelingPage />} />
       <Route path="/dataset" element={<DatasetPage />} />
       <Route path="/training" element={<TrainingPage />} />
+      <Route path="/training/monitor" element={<TrainingMonitorPage />} />
       <Route path="/home" element={<Navigate to="/" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
