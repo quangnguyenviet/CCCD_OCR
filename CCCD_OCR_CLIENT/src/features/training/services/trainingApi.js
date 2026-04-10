@@ -65,6 +65,28 @@ export async function getTrainingStatus() {
   }
 }
 
+export async function getTrainingResultImages(modelOutputDir, name) {
+  try {
+    const response = await apiClient.get('/api/training/results', {
+      params: {
+        modelOutputDir,
+        name,
+      },
+    })
+    return response.data
+  } catch (error) {
+    throw new Error(resolveApiErrorMessage(error))
+  }
+}
+
+export function resolveResultImageUrl(relativeOrAbsoluteUrl) {
+  if (!relativeOrAbsoluteUrl) return ''
+  if (relativeOrAbsoluteUrl.startsWith('http://') || relativeOrAbsoluteUrl.startsWith('https://')) {
+    return relativeOrAbsoluteUrl
+  }
+  return `${API_BASE_URL}${relativeOrAbsoluteUrl}`
+}
+
 export async function registerTrainedModel(payload) {
   try {
     const response = await apiClient.post('/api/models/register-trained', payload)

@@ -209,6 +209,14 @@ function TrainingMonitorWorkspace() {
           >
             {stoppingTraining ? 'Đang dừng...' : 'Dừng huấn luyện'}
           </button>
+          <Link
+            className="button-link"
+            to="/training/results"
+            state={{ trainingResult, trainingInput }}
+            style={{ marginLeft: '0.5rem' }}
+          >
+            Xem kết quả chi tiết
+          </Link>
           <Link className="button-link" to="/training" style={{ marginLeft: '0.5rem' }}>
             Tạo phiên khác
           </Link>
