@@ -157,6 +157,7 @@ public class TrainingService {
         }
 
         Path exportRoot = Paths.get(datasetRootDir, "training_exports");
+        // if the directory already exists -> no error
         Files.createDirectories(exportRoot);
 
         String safeDatasetName = sanitizeFileName(dataset.getDatasetName());
