@@ -74,6 +74,9 @@ public class Model {
     @Column(name = "final_metrics", columnDefinition = "TEXT")
     private String finalMetrics;
 
+    @Column(name = "accuracy")
+    private Double accuracy;
+
     @Column(name = "created_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", updatable = false)
     private LocalDateTime createdAt;
 }

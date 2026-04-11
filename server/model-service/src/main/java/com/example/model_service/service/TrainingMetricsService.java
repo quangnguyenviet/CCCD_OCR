@@ -105,6 +105,16 @@ public class TrainingMetricsService {
         }
         if (metrics.metricsJson != null) {
             model.setFinalMetrics(metrics.metricsJson);
+            // Cố gắng parse mAP50 hoặc precision để dùng làm accuracy
+            try {
+                Map<String, Object> map = objectMapper.readValue(metrics.metricsJson, new TypeReference<>() {});
+                if (map.containsKey("mAP50")) {
+                    model.setAccuracy(Double.parseDouble(map.get("mAP50").toString()));
+                } else if (map.containsKey("precision")) {
+                    model.setAccuracy(Double.parseDouble(map.get("precision").toString()));
+                }
+            } catch (Exception ignored) {
+            }
         }
         
         // Update status to COMPLETED

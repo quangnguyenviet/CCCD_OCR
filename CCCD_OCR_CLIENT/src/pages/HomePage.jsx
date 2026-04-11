@@ -25,6 +25,9 @@ function HomePage() {
           <Link className="button-link" to="/training" style={{ marginLeft: '0.5rem' }}>
             Open Training page
           </Link>
+          <Link className="button-link" to="/statistics" style={{ marginLeft: '0.5rem', background: '#3b82f6', color: 'white' }}>
+            Thống kê Mô hình
+          </Link>
         </div>
       </section>
     </main>
